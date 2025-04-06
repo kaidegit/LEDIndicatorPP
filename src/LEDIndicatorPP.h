@@ -21,6 +21,7 @@ class LEDIndicator {
 public:
     struct BlinkStatus {
         BlinkType type;
+        bool first_start;
         uint32_t current_step_index;
         uint32_t elapsed_time;
         uint32_t last_update_time;
@@ -53,12 +54,14 @@ public:
                 if (it->type >= type) {
                     if (it->type == type) {
                         log_w("Pattern already exists, set it to default");
+                        it->first_start = true;
                         it->current_step_index = 0;
                         it->elapsed_time = 0;
                         it->last_update_time = GetTime();
                     } else {
                         active_patterns.insert(it, BlinkStatus{
                                                    .type = type,
+                                                   .first_start = true,
                                                    .current_step_index = 0,
                                                    .elapsed_time = 0,
                                                    .last_update_time = GetTime()
@@ -71,6 +74,7 @@ public:
             if (insert_at_end) {
                 active_patterns.emplace_back(BlinkStatus{
                     .type = type,
+                    .first_start = true,
                     .current_step_index = 0,
                     .elapsed_time = 0,
                     .last_update_time = GetTime()
@@ -113,15 +117,23 @@ public:
 
             const auto pattern = patterns.find(it->type)->second;
             const auto &steps = pattern.getSteps();
-            while (it->elapsed_time >= steps[it->current_step_index].duration_ms) {
-                it->elapsed_time -= steps[it->current_step_index].duration_ms;
+            if (it->first_start) {
+                // first time, just execute
                 if (it == active_patterns.begin()) {
                     executeStep(steps[it->current_step_index]);
                 }
+                it->first_start = false;
+            }
+            log_d("waiting %d", steps[it->current_step_index].duration_ms);
+            while (it->elapsed_time >= steps[it->current_step_index].duration_ms) {
+                it->elapsed_time -= steps[it->current_step_index].duration_ms;
                 it->current_step_index = getNextStep(steps[it->current_step_index], it->current_step_index);
                 if (steps[it->current_step_index].type == BlinkStepType::STOP) {
                     stop(it->type);
                     break;
+                }
+                if (it == active_patterns.begin()) {
+                    executeStep(steps[it->current_step_index]);
                 }
             }
         }
@@ -143,6 +155,8 @@ private:
                 driver->setBrightness(step.brightness);
                 break;
             case BlinkStepType::RGB:
+                printf("\t\tSet to %d, %d, %d\n", step.color.r, step.color.g, step.color.b);
+                driver->setColor(step.color.r, step.color.g, step.color.b);
                 break;
             case BlinkStepType::HSV:
                 break;

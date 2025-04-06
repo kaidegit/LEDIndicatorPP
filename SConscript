@@ -4,7 +4,7 @@ import os
 cwd = GetCurrentDir()
 group = []
 src = Glob('src/*.cpp')
-src += Glob('*.c')
+src += Glob('*.cpp')
 src += Glob('src/driver/*.cpp')
 inc_path = cwd + '/src'
 

@@ -22,3 +22,5 @@ void LEDDriver_GPIO::setBrightness(int percent) {
 void LEDDriver_GPIO::setColor(int r, int g, int b) {
     log_w("setColor not support");
 }
+
+
