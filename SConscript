@@ -4,8 +4,10 @@ import os
 cwd = GetCurrentDir()
 group = []
 src = Glob('src/*.cpp')
-src += Glob('*.cpp')
 src += Glob('src/driver/*.cpp')
+if os.getenv("TEST_LED_IND"):
+    src += Glob('test.cpp')
+
 inc_path = cwd + '/src'
 
 list = os.listdir(cwd)
