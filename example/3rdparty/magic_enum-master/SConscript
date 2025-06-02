@@ -1,0 +1,9 @@
+from building import *
+
+cwd = GetCurrentDir()
+src = Glob('*.c')
+CPPPATH = [cwd + "/include/magic_enum"]
+
+group = DefineGroup('magic_enum', src, depend = [''], CPPPATH = CPPPATH)
+
+Return('group')

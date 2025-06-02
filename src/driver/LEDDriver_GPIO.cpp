@@ -19,7 +19,7 @@ void LEDDriver_GPIO::setBrightness(int percent) {
     log_w("setBrightness not support");
 }
 
-void LEDDriver_GPIO::setColor(int r, int g, int b) {
+void LEDDriver_GPIO::setColor(uint8_t r, uint8_t g, uint8_t b) {
     log_w("setColor not support");
 }
 

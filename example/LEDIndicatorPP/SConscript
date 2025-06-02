@@ -1,0 +1,12 @@
+import rtconfig
+from building import *
+import os
+
+cwd  = os.path.join(GetCurrentDir(), "../..")
+path = [cwd, cwd + "/src"]
+src  = Glob(cwd + '/src/*.c') + Glob(cwd + "/src/*.cpp")
+src += Glob(cwd + "/src/driver/*.cpp")
+
+group = DefineGroup('LEDIndicatorPP', src, depend = [''], CPPPATH = path)
+
+Return('group')

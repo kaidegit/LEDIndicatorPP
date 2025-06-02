@@ -3,11 +3,13 @@
  * bernard.xiong 2009-10-14
  */
 
-/* Program Entry, set to mark it as "used" and avoid gc */
+/* ProgDTCM Entry, set to mark it as "used" and avoid gc */
 MEMORY
 {
-    ROM (rx) : ORIGIN = 0x08000000, LENGTH = 128K
-    RAM (rw) : ORIGIN = 0x20000000, LENGTH =  128k
+    ROM (rx) : ORIGIN = 0x08000000, LENGTH = 2M
+    DTCM (rw) : ORIGIN = 0x20000000, LENGTH = 128k
+    ITCM (rw) : ORIGIN = 0x00000000, LENGTH = 64K
+    RAM (rw) : ORIGIN = 0x24000000, LENGTH =  512K
 }
 ENTRY(Reset_Handler)
 _system_stack_size = 0x400;
@@ -89,7 +91,7 @@ SECTIONS
         . = ALIGN(4);
         /* This is used by the startup in order to initialize the .data secion */
         _edata = . ;
-    } >RAM
+    } >DTCM
 
     .stack :
     {
@@ -98,7 +100,7 @@ SECTIONS
         . = . + _system_stack_size;
         . = ALIGN(4);
         _estack = .;
-    } >RAM
+    } >DTCM
 
     __bss_start = .;
     .bss :
@@ -116,7 +118,7 @@ SECTIONS
         _ebss = . ;
 
         *(.bss.init)
-    } > RAM
+    } > DTCM
     __bss_end = .;
 
     _end = .;
@@ -145,7 +147,7 @@ SECTIONS
     .debug_info     0 : { *(.debug_info .gnu.linkonce.wi.*) }
     .debug_abbrev   0 : { *(.debug_abbrev) }
     .debug_line     0 : { *(.debug_line) }
-    .debug_frame    0 : { *(.debug_frame) }
+    .debug_fDTCMe    0 : { *(.debug_fDTCMe) }
     .debug_str      0 : { *(.debug_str) }
     .debug_loc      0 : { *(.debug_loc) }
     .debug_macinfo  0 : { *(.debug_macinfo) }
