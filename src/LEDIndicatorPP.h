@@ -7,11 +7,11 @@
 #include "rtthread.h"
 #include "magic_enum.hpp"
 
-#define LOG_TAG "LEDIndicator"
+#include <map>
 
-#include "ulog.h"
+#include "log_wrapper.hpp"
 
-static inline auto GetTime() {
+static inline uint32_t GetTime() {
     return rt_tick_get_millisecond();
 }
 
@@ -56,7 +56,7 @@ public:
         if (lock) {
             lock(lock_user_data);
         }
-        printf("Starting pattern: %s\n", magic_enum::enum_name(type).data());
+        log_i("Starting pattern: %s", magic_enum::enum_name(type).data());
         auto it = patterns.find(type);
         if (it != patterns.end()) {
             // insert to list depends on type order
@@ -142,9 +142,9 @@ public:
 
         for (auto it = active_patterns.begin(); it != active_patterns.end(); ++it) {
             // if (it == active_patterns.begin()) {
-            //     printf("Active pattern: %s\n", magic_enum::enum_name(it->type).data());
+            //     log_d("Active pattern: %s\n", magic_enum::enum_name(it->type).data());
             // } else {
-            //     printf("Not active pattern: %s\n", magic_enum::enum_name(it->type).data());
+            //     log_d("Not active pattern: %s\n", magic_enum::enum_name(it->type).data());
             // }
             auto now = GetTime();
             auto delta_ms = now - it->last_update_time;
@@ -211,7 +211,7 @@ public:
 private:
     void reexecuteFirstStep() {
         if (!active_patterns.empty()) {
-            log_d("Re-execute the first step");
+            log_i("Re-execute the first step");
             auto pattern_item = active_patterns.begin();
             const auto pattern = patterns.find(pattern_item->type)->second;
             const auto &steps = pattern.getSteps();
@@ -219,7 +219,7 @@ private:
                 .type = BlinkStepType::RGB,
                 .color = pattern_item->current_color
             };
-            log_d("%s Set cached color %d, %d, %d",
+            log_i("%s Set cached color %d, %d, %d",
                   magic_enum::enum_name(pattern_item->type).data(),
                   color_step.color.r,
                   color_step.color.g,
@@ -228,24 +228,24 @@ private:
             executeStep(color_step);
             executeStep(steps[pattern_item->current_step_index]);
         } else {
-            log_d("No active patterns");
+            log_i("No active patterns");
         }
     }
 
     void executeStep(const BlinkStep &step) {
-        // printf("\tExecuting step: %s\n", magic_enum::enum_name(step.type).data());
+        // log_d("\tExecuting step: %s\n", magic_enum::enum_name(step.type).data());
         switch (step.type) {
         case BlinkStepType::HOLD:
         case BlinkStepType::BREATHE:
-            // printf("\t\tSet to %s\n", magic_enum::enum_name(step.state).data());
+            // log_d("\t\tSet to %s\n", magic_enum::enum_name(step.state).data());
             driver->setState(step.state);
             break;
         case BlinkStepType::BRIGHTNESS:
-            // printf("\t\tSet to %d\n", step.brightness);
+            // log_d("\t\tSet to %d\n", step.brightness);
             driver->setBrightness(step.brightness);
             break;
         case BlinkStepType::RGB:
-            // printf("\t\tSet to %d, %d, %d\n", step.color.r, step.color.g, step.color.b);
+            // log_d("\t\tSet to %d, %d, %d\n", step.color.r, step.color.g, step.color.b);
             driver->setColor(step.color.r, step.color.g, step.color.b);
             break;
         case BlinkStepType::HSV:
@@ -282,7 +282,7 @@ private:
     }
 
     std::unique_ptr<LEDDriver> driver;
-    std::unordered_map<BlinkType, BlinkPattern> patterns; // 存储所有LED灯图案
+    std::map<BlinkType, BlinkPattern> patterns; // 存储所有LED灯图案
     std::list<BlinkStatus> active_patterns; // 有序链表，按优先级排序
     std::function<void(void *)> lock;
     std::function<void(void *)> unlock;

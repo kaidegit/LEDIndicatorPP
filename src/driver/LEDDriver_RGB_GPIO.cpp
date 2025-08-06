@@ -1,8 +1,6 @@
 #include "LEDDriver.h"
 
-#define LOG_TAG "LEDDriver_GPIO"
-
-#include "ulog.h"
+#include "log_wrapper.hpp"
 
 void LEDDriver_RGB_GPIO::setState(LedState state) {
     switch (state) {

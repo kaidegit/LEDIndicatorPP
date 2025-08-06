@@ -16,5 +16,5 @@ for d in list:
     if os.path.isfile(os.path.join(path, 'SConscript')):
         group = group + SConscript(os.path.join(d, 'SConscript'))
 
-group = group + DefineGroup('led_indicator_pp', src, depend = [''], CPPPATH = [inc_path])
+group = group + DefineGroup('led_indicator_pp', src, depend = [''], CPPPATH = [inc_path], CPPDEFINES = ["USE_ULOG=1"])
 Return('group')
