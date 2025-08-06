@@ -47,8 +47,8 @@ public:
     }
 
     void addLockFunc(std::function<void(void *)> lock, std::function<void(void *)> unlock, void *user_data) {
-        this->lock = lock;
-        this->unlock = unlock;
+        this->lock = std::move(lock);
+        this->unlock = std::move(unlock);
         this->lock_user_data = user_data;
     }
 
@@ -134,6 +134,9 @@ public:
         bool update_again = false;
         if (active_patterns.empty()) {
             // log_d("No active patterns");
+            if (unlock) {
+                unlock(lock_user_data);
+            }
             return;
         }
 
