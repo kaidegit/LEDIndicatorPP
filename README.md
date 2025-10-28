@@ -2,6 +2,10 @@
 
 LED指示器这是一个具有预设优先级，自动抢占功能的LED框架，使用c++实现。灵感来自[esp-iot-solution/components/led/led_indicator at master · espressif/esp-iot-solution](https://github.com/espressif/esp-iot-solution/tree/master/components/led/led_indicator)
 
+## 示例
+
+* RT-Thread: [kaidegit/LEDIndicatorPP_example_rtt](https://github.com/kaidegit/LEDIndicatorPP_example_rtt)
+
 ## 支持类型
 
 - [x] GPIO LED
