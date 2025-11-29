@@ -32,9 +32,20 @@ public:
 
     virtual void setState(LedState state) = 0;
 
-    virtual void setBrightness(int percent) = 0;
+    virtual void setBrightness(int percent) {
+    };
 
-    virtual void setColor(uint8_t r, uint8_t g, uint8_t b) = 0;
+    virtual void setColor(uint8_t r, uint8_t g, uint8_t b) {
+    };
+
+    virtual void setIndexColor(uint8_t index, uint8_t r, uint8_t g, uint8_t b) {
+    };
+
+    virtual void clearStrip() {
+    }
+
+    virtual void update() {
+    };
 };
 
 class LEDDriver_GPIO : public LEDDriver {
@@ -44,10 +55,6 @@ public:
     }
 
     virtual void setState(LedState state) override;
-
-    virtual void setBrightness(int percent) override;
-
-    virtual void setColor(uint8_t r, uint8_t g, uint8_t b) override;
 
 private:
     std::function<void(uint8_t, void *)> write_gpio;
@@ -75,13 +82,11 @@ public:
 
     virtual void setState(LedState state) override;
 
-    virtual void setBrightness(int percent) override;
-
     virtual void setColor(uint8_t r, uint8_t g, uint8_t b) override;
 
 private:
     std::function<void(uint8_t, LED_PIN, void *)> write_gpio;
     uint8_t active_level;
-    LedColor led_color_cache;
-    void *user_data;
+    void *user_data{nullptr};
+    LedColor led_color_cache{0, 0, 0, 0};
 };

@@ -1,5 +1,7 @@
 #include "LEDDriver.h"
 
+#define LOG_TAG "LEDDriver_GPIO"
+
 #include "log_wrapper.hpp"
 
 void LEDDriver_GPIO::setState(LedState state) {
@@ -10,15 +12,6 @@ void LEDDriver_GPIO::setState(LedState state) {
         case LedState::ON:
             write_gpio(active_level, user_data);
             break;
+        default:;
     }
 }
-
-void LEDDriver_GPIO::setBrightness(int percent) {
-    log_w("setBrightness not support");
-}
-
-void LEDDriver_GPIO::setColor(uint8_t r, uint8_t g, uint8_t b) {
-    log_w("setColor not support");
-}
-
-

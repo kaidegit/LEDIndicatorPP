@@ -2,18 +2,29 @@
 
 #include <memory>
 #include <list>
+#include <map>
 #include "driver/LEDDriver.h"
 #include "BlinkPattern.h"
-#include "rtthread.h"
 #include "magic_enum.hpp"
-
-#include <map>
-
 #include "log_wrapper.hpp"
 
+// if RT-Thread
+#if defined(__RTTHREAD__)
+#include "rtthread.h"
 static inline uint32_t GetTime() {
     return rt_tick_get_millisecond();
 }
+#endif
+
+// if esp or freeRTOS(this need you to add a global macro)
+#if defined(ESP_PLATFORM) || defined(FREERTOS)
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+static inline uint32_t GetTime() {
+    return xTaskGetTickCount();
+}
+#endif
 
 
 template<typename BlinkType>
@@ -25,7 +36,12 @@ public:
         uint32_t current_step_index;
         uint32_t elapsed_time;
         uint32_t last_update_time;
-        LedColor current_color;
+        BlinkStepType current_color_type;
+
+        union {
+            LedColor current_color;
+            LedColorWithIndex current_icolor;
+        };
     };
 
     explicit LEDIndicator(std::unique_ptr<LEDDriver> driver)
@@ -75,7 +91,9 @@ public:
                                                    .first_start = true,
                                                    .current_step_index = 0,
                                                    .elapsed_time = 0,
-                                                   .last_update_time = GetTime()
+                                                   .last_update_time = GetTime(),
+                                                   .current_color_type = BlinkStepType::RGB,
+                                                   .current_color = {0, 0, 0, 0}
                                                });
                     }
                     insert_at_end = false;
@@ -88,7 +106,9 @@ public:
                     .first_start = true,
                     .current_step_index = 0,
                     .elapsed_time = 0,
-                    .last_update_time = GetTime()
+                    .last_update_time = GetTime(),
+                    .current_color_type = BlinkStepType::RGB,
+                    .current_color = {0, 0, 0, 0}
                 });
             }
         } else {
@@ -149,6 +169,7 @@ public:
 
             const auto pattern_it = patterns.find(it->type);
             if (pattern_it == patterns.end()) {
+                log_w("Pattern not found for type...");
                 it = active_patterns.erase(it);
                 continue;
             }
@@ -160,7 +181,11 @@ public:
                     executeStep(steps[it->current_step_index]);
                 }
                 if (steps[it->current_step_index].type == BlinkStepType::RGB) {
+                    it->current_color_type = steps[it->current_step_index].type;
                     it->current_color = steps[it->current_step_index].color;
+                } else if (steps[it->current_step_index].type == BlinkStepType::IRGB) {
+                    it->current_color_type = steps[it->current_step_index].type;
+                    it->current_icolor = steps[it->current_step_index].icolor;
                 }
                 it->first_start = false;
             }
@@ -184,7 +209,11 @@ public:
                 }
 
                 if (steps[it->current_step_index].type == BlinkStepType::RGB) {
+                    it->current_color_type = steps[it->current_step_index].type;
                     it->current_color = steps[it->current_step_index].color;
+                } else if (steps[it->current_step_index].type == BlinkStepType::IRGB) {
+                    it->current_color_type = steps[it->current_step_index].type;
+                    it->current_icolor = steps[it->current_step_index].icolor;
                 }
             }
 
@@ -197,11 +226,14 @@ public:
             reexecuteFirstStep();
         }
 
+        if (driver) {
+            driver->update();
+        }
+
         if (unlock) {
             unlock(lock_user_data);
         }
     }
-
 
 private:
     void reexecuteFirstStep() {
@@ -210,15 +242,20 @@ private:
             auto pattern_item = active_patterns.begin();
             const auto pattern = patterns.find(pattern_item->type)->second;
             const auto &steps = pattern.getSteps();
-            const auto color_step = BlinkStep{
-                .type = BlinkStepType::RGB,
-                .color = pattern_item->current_color
-            };
-            log_i("%s Set cached color %d, %d, %d",
+            auto color_step = BlinkStep{};
+            color_step.type = pattern_item->current_color_type;
+            color_step.duration_ms = 0;
+            if (color_step.type == BlinkStepType::RGB) {
+                color_step.color = pattern_item->current_color;
+            } else if (color_step.type == BlinkStepType::IRGB) {
+                color_step.icolor = pattern_item->current_icolor;
+            }
+            log_i("%s Set cached color %d(%d, %d, %d)",
                   magic_enum::enum_name(pattern_item->type).data(),
-                  color_step.color.r,
-                  color_step.color.g,
-                  color_step.color.b
+                  color_step.icolor.index,
+                  color_step.icolor.r,
+                  color_step.icolor.g,
+                  color_step.icolor.b
             );
             executeStep(color_step);
             executeStep(steps[pattern_item->current_step_index]);
@@ -228,42 +265,49 @@ private:
     }
 
     void executeStep(const BlinkStep &step) {
+        if (!driver) { return; }
         // log_d("\tExecuting step: %s\n", magic_enum::enum_name(step.type).data());
         switch (step.type) {
-        case BlinkStepType::HOLD:
-        case BlinkStepType::BREATHE:
-            // log_d("\t\tSet to %s\n", magic_enum::enum_name(step.state).data());
-            driver->setState(step.state);
-            break;
-        case BlinkStepType::BRIGHTNESS:
-            // log_d("\t\tSet to %d\n", step.brightness);
-            driver->setBrightness(step.brightness);
-            break;
-        case BlinkStepType::RGB:
-            // log_d("\t\tSet to %d, %d, %d\n", step.color.r, step.color.g, step.color.b);
-            driver->setColor(step.color.r, step.color.g, step.color.b);
-            break;
-        case BlinkStepType::HSV:
-            break;
-        case BlinkStepType::LOOP:
-            break;
-        case BlinkStepType::STOP:
-            break;
+            case BlinkStepType::HOLD:
+            case BlinkStepType::BREATHE:
+                // log_d("\t\tSet to %s\n", magic_enum::enum_name(step.state).data());
+                driver->setState(step.state);
+                break;
+            case BlinkStepType::BRIGHTNESS:
+                // log_d("\t\tSet to %d\n", step.brightness);
+                driver->setBrightness(step.brightness);
+                break;
+            case BlinkStepType::RGB:
+                // log_d("\t\tSet to %d, %d, %d\n", step.color.r, step.color.g, step.color.b);
+                driver->setColor(step.color.r, step.color.g, step.color.b);
+                break;
+            case BlinkStepType::IRGB:
+                driver->setIndexColor(step.icolor.index, step.icolor.r, step.icolor.g, step.icolor.b);
+                break;
+            case BlinkStepType::CLEAR:
+                driver->clearStrip();
+                break;
+            case BlinkStepType::HSV:
+                break;
+            case BlinkStepType::LOOP:
+                break;
+            case BlinkStepType::STOP:
+                break;
         }
     }
 
     uint32_t getNextStep(const BlinkStep &step, uint32_t step_index) {
         switch (step.type) {
-        case BlinkStepType::LOOP:
-            return 0;
-        case BlinkStepType::HOLD:
-        case BlinkStepType::BREATHE:
-        case BlinkStepType::BRIGHTNESS:
-        case BlinkStepType::RGB:
-        case BlinkStepType::HSV:
-        case BlinkStepType::STOP:
-        default:
-            return step_index + 1;
+            case BlinkStepType::LOOP:
+                return 0;
+            case BlinkStepType::HOLD:
+            case BlinkStepType::BREATHE:
+            case BlinkStepType::BRIGHTNESS:
+            case BlinkStepType::RGB:
+            case BlinkStepType::HSV:
+            case BlinkStepType::STOP:
+            default:
+                return step_index + 1;
         }
     }
 

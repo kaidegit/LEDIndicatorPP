@@ -24,11 +24,8 @@ void LEDDriver_RGB_GPIO::setState(LedState state) {
         write_gpio(!active_level, static_cast<LED_PIN>(inactive_pin), user_data);
     }
     break;
+    default: ;
     }
-}
-
-void LEDDriver_RGB_GPIO::setBrightness(int percent) {
-    log_w("setBrightness not support");
 }
 
 void LEDDriver_RGB_GPIO::setColor(uint8_t r, uint8_t g, uint8_t b) {

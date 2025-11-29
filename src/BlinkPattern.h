@@ -9,13 +9,16 @@ enum class BlinkStepType : uint8_t {
     BREATHE,
     BRIGHTNESS,
     RGB,
+    IRGB,
+    CLEAR,
     HSV,
     LOOP,
     STOP
 };
 
 struct BlinkStep {
-    BlinkStepType type;
+    BlinkStepType type: 8;
+    uint32_t duration_ms: 24;
 
     union {
         LedState state;
@@ -25,7 +28,28 @@ struct BlinkStep {
         uint32_t resv;
     };
 
-    int duration_ms;
+    constexpr BlinkStep() : type(BlinkStepType::HOLD), duration_ms(0), resv(0) {
+    }
+
+    constexpr BlinkStep(BlinkStepType t, LedState state, uint32_t ms)
+        : type(t), duration_ms(ms), state(state) {
+    }
+
+    constexpr BlinkStep(BlinkStepType t, uint32_t brightness, uint32_t ms)
+        : type(t), duration_ms(ms), brightness(brightness) {
+    }
+
+    constexpr BlinkStep(BlinkStepType t, LedColor color, uint32_t ms)
+        : type(t), duration_ms(ms), color(color) {
+    }
+
+    constexpr BlinkStep(BlinkStepType t, LedColorWithIndex icolor, uint32_t ms)
+        : type(t), duration_ms(ms), icolor(icolor) {
+    }
+
+    constexpr BlinkStep(BlinkStepType t, uint32_t ms)
+        : type(t), duration_ms(ms), resv(0) {
+    }
 };
 
 class BlinkPattern {
