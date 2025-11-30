@@ -22,7 +22,7 @@ static inline uint32_t GetTime() {
 #include "freertos/task.h"
 
 static inline uint32_t GetTime() {
-    return xTaskGetTickCount();
+    return pdTICKS_TO_MS(xTaskGetTickCount());
 }
 #endif
 
