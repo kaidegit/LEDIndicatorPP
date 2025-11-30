@@ -4,6 +4,7 @@ LED指示器这是一个具有预设优先级，自动抢占功能的LED框架�
 
 ## 示例
 
+* ESP-IDF: [kaidegit/LEDIndicatorPP_example_idf](https://github.com/kaidegit/LEDIndicatorPP_example_idf)
 * RT-Thread: [kaidegit/LEDIndicatorPP_example_rtt](https://github.com/kaidegit/LEDIndicatorPP_example_rtt)
 
 ## 支持类型
@@ -16,93 +17,120 @@ LED指示器这是一个具有预设优先级，自动抢占功能的LED框架�
 - [ ] GPIO LED under 74HC595
 - [ ] RGB LED under AW2023
 
-## 使用方法
+## 使用方法(详见例程)
 
-### 实例化一个LED对象及其控制驱动
+### 实例化一个LED对象及其控制驱动，如有需要，添加锁
 
 ```c++
-    rt_pin_mode(LED0_PIN, PIN_MODE_OUTPUT);
-    auto driver = std::make_unique<LEDDriver_GPIO>([](uint8_t active_level, void *) {
-        rt_pin_write(LED0_PIN, active_level);
-    }, 0, nullptr);
+    const auto write_pin = [](uint8_t level, void *user_data) {
+        auto pin = *reinterpret_cast<gpio_num_t *>(user_data);
+        if (pin == GPIO_NUM_NC) { return; }
+        gpio_set_level(pin, level);
+    };
 
-    auto led_indicator = new LEDIndicator<BlinkTypeTest>(std::move(driver));
+    led_indicator = new LEDIndicator<BlinkType>(std::make_unique<LEDDriver_GPIO>(
+        write_pin,
+        1,
+        &led_pin
+    ));
+    
+    const auto lock_func = [](void *user_data) {
+        auto led_mutex = static_cast<SemaphoreHandle_t>(user_data);
+        if (pdTRUE != xSemaphoreTake(led_mutex, pdMS_TO_TICKS(100))) {
+            ESP_LOGW("LED", "led_mutex take timeout");
+        }
+    };
+    const auto unlock_func = [](void *user_data) {
+        auto led_mutex = static_cast<SemaphoreHandle_t>(user_data);
+        xSemaphoreGive(led_mutex);
+    };
+    led_indicator->addLockFunc(std::move(lock_func), std::move(unlock_func), led_mutex);
 ```
 
 ### 定义一个优先级
 
 ```c++
-enum class BlinkTypeTest {
-    BLINK_TWO_TIME, // 优先级最高
-    BLINK_UPDATING,
-    BLINK_LOOP // 优先级较低
-};
+    enum class BlinkType {
+        BLINK_PRIORITY_HIGHEST,  // 优先级最高
+        BLINK_OFF,
+        BLINK_FAST,
+        BLINK_NORMAL,
+        BLINK_IDLE,
+        BLINK_PRIORITY_LOWEST // 优先级较低
+    };
 ```
 
 ### 注册这些优先级下的led动作
 
 ```c++
-    BlinkPattern blink_pattern_two_time{
+    BlinkPattern blink_pattern_idle{
         {
-            {HOLD, {.state = ON}, 200},
-            {HOLD, {.state = OFF}, 200},
-            {HOLD, {.state = ON}, 200},
-            {HOLD, {.state = OFF}, 200},
-            {STOP, {.resv = 0}, 0},
+            {HOLD, ON, 100000},
+            {LOOP, 0},
         }
     };
-    BlinkPattern blink_pattern_updating{
-        {
-            {HOLD, {.state = ON}, 50},
-            {HOLD, {.state = OFF}, 100},
-            {HOLD, {.state = ON}, 50},
-            {HOLD, {.state = OFF}, 800},
-            {LOOP, {.resv = 0}, 0},
-        }
-    };
-    BlinkPattern blink_pattern_loop{
-        {
-            {HOLD, {.state = ON}, 500},
-            {HOLD, {.state = OFF}, 500},
-            {LOOP, {.resv = 0}, 0},
-        }
-    };
+    led_indicator->addPattern(BlinkType::BLINK_IDLE, blink_pattern_idle);
 
-    led_indicator->addPattern(BlinkTypeTest::BLINK_TWO_TIME, blink_pattern_two_time);
-    led_indicator->addPattern(BlinkTypeTest::BLINK_UPDATING, blink_pattern_updating);
-    led_indicator->addPattern(BlinkTypeTest::BLINK_LOOP, blink_pattern_loop);
+    BlinkPattern blink_pattern_off{
+        {
+            {HOLD, OFF, 2000},
+            {STOP, 0},
+        }
+    };
+    led_indicator->addPattern(BlinkType::BLINK_OFF, blink_pattern_off);
+
+    BlinkPattern blink_pattern_normal{
+        {
+            {HOLD, OFF, 500},
+            {HOLD, ON, 500},
+            {LOOP, 0},
+        }
+    };
+    led_indicator->addPattern(BlinkType::BLINK_NORMAL, blink_pattern_normal);
 ```
 
 ### 每隔50ms检查是否该为LED动作
 
 ```c++
-    if (test_tmr) {
-        rt_timer_delete(test_tmr);
-    }
-    test_tmr = rt_timer_create(
+    tmr = xTimerCreate(
         "led_i",
-        [](void *arg) {
-            auto led_indicator = static_cast<LEDIndicator<BlinkTypeTest> *>(arg);
-            led_indicator->update();
-        },
-        led_indicator,
-        50,
-        RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER
+        pdMS_TO_TICKS(20),
+        true,
+        nullptr,
+        [](TimerHandle_t timer) {
+            instance->update();
+        }
     );
-    if (test_tmr) {
-        rt_timer_start(test_tmr);
+    if (tmr) {
+        xTimerStart(tmr, portMAX_DELAY);
     }
 ```
 
 ### 使用
 
 ```c++
-    led_indicator->start(BlinkTypeTest::BLINK_LOOP);
-    rt_thread_delay(1000);
-    led_indicator->start(BlinkTypeTest::BLINK_TWO_TIME);
-    rt_thread_delay(5000);
-    led_indicator->start(BlinkTypeTest::BLINK_UPDATING);
-    rt_thread_delay(10000);
-    led_indicator->stop(BlinkTypeTest::BLINK_UPDATING);
+    ESP_LOGI(TAG, "LED Indicator Example");
+    LEDController::getInstance();
+
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    ESP_LOGI(TAG, "start led off pattern");
+    LEDController::getInstance()->getIndicator()->start(LEDController::BlinkType::BLINK_OFF);
+
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    ESP_LOGI(TAG, "start normal blink");
+    LEDController::getInstance()->getIndicator()->start(LEDController::BlinkType::BLINK_NORMAL);
+
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    ESP_LOGI(TAG, "manually stop normal blink");
+    LEDController::getInstance()->getIndicator()->stop(LEDController::BlinkType::BLINK_NORMAL);
+
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    ESP_LOGI(TAG, "start normal blink and fast blink, it should behave fast blink");
+    LEDController::getInstance()->getIndicator()->start(LEDController::BlinkType::BLINK_FAST);
+    LEDController::getInstance()->getIndicator()->start(LEDController::BlinkType::BLINK_NORMAL);
 ```
 
