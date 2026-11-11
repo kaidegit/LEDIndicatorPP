@@ -54,8 +54,10 @@ export function readState(wasm: WasmExports, handle: number, time: number): Stat
   const view = new DataView(wasm.HEAPU8.buffer);
   const active: ActivePattern[] = [];
   const activeCount = view.getUint32(pointer + 4, true);
-  for (let index = 0; index < Math.min(activeCount, MAX_ACTIVE_PATTERNS); index += 1) {
-    const offset = pointer + 48 + index * 32;
+  let pagePointer = pointer + 48;
+  for (let index = 0; index < activeCount; index += 1) {
+    if (index % MAX_ACTIVE_PATTERNS === 0) pagePointer = wasm._ledip_active_page_pointer(handle, index);
+    const offset = pagePointer + (index % MAX_ACTIVE_PATTERNS) * 32;
     active.push({
       type: view.getInt32(offset, true),
       stepIndex: view.getUint32(offset + 4, true),

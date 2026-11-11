@@ -198,6 +198,7 @@ export interface WasmExports {
   _ledip_event_count(handle: number): number;
   _ledip_clear_events(handle: number): void;
   _ledip_state_pointer(handle: number): number;
+  _ledip_active_page_pointer(handle: number, offset: number): number;
   _ledip_memory_pointer(handle: number): number;
   _ledip_blocks_pointer(handle: number): number;
   _ledip_block_count(handle: number): number;

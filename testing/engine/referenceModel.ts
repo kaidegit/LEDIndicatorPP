@@ -42,6 +42,7 @@ export class ReferenceModel {
   private active: ModelPattern[] = [];
   private readonly state: StateSnapshot;
   private readonly activeLevel: 0 | 1;
+  private rgbCache: [number, number, number] = [1, 1, 1];
 
   constructor(private readonly scenario: Scenario) {
     this.activeLevel = scenario.activeLevel ?? 1;
@@ -208,9 +209,10 @@ export class ReferenceModel {
         break;
       case 'RGB':
       case 'IRGB':
-        if (this.scenario.driver === 'recorder' || this.scenario.driver === 'rgb-gpio') {
+        if (this.scenario.driver === 'recorder' || (this.scenario.driver === 'rgb-gpio' && step.type === 'RGB')) {
           this.state.requestedColor = [...step.color!, step.type === 'IRGB' ? step.index! : 0];
         }
+        if (this.scenario.driver === 'rgb-gpio' && step.type === 'RGB') this.rgbCache = [...step.color!];
         break;
       case 'CLEAR':
         break;
@@ -231,9 +233,9 @@ export class ReferenceModel {
         this.setPins(1, this.activeLevel);
       } else {
         let activeMask = 0;
-        if (this.state.requestedColor[0]) activeMask |= 1;
-        if (this.state.requestedColor[1]) activeMask |= 2;
-        if (this.state.requestedColor[2]) activeMask |= 4;
+        if (this.rgbCache[0]) activeMask |= 1;
+        if (this.rgbCache[1]) activeMask |= 2;
+        if (this.rgbCache[2]) activeMask |= 4;
         this.setPins(activeMask, this.activeLevel);
         this.setPins(7 & ~activeMask, 1 - this.activeLevel);
       }

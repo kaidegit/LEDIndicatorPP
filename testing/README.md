@@ -92,8 +92,9 @@ Worker 外部计时器负责真实超时并终止卡死场景，之后可以运�
 - 结果包含协议版本、有效场景、构建/源码、宿主环境、断言、轨迹、指标、产物路径和复现命令。
 - 内存分配序号从实例创建开始，包含实例和驱动。`failureMemory` 报告失败序号、大小和操作索引。
 - 碎片率为 `(1 - largestFreeBlock / freeBytes) * 100`；无空闲块时为 0。固定开销、请求字节和 TLSF 实际占用分别报告。
-- WASM 线性内存、TLSF 静态预留池和 1 MiB 栈预留分别列出。静态区总量和可靠栈高水位目前为 `null`，不会填零。
-- 每个 Worker 一个场景；固定池最大 1 MiB，事件最多 4096 条/次读取，活动观测最多 16 项，块快照最多 1024 项。达到容量会报告溢出或截断边界，不静默丢失事件。
+- WASM 线性内存、TLSF backing 固定预留量和 1 MiB 栈预留分别列出。`physicalPoolBytes` / `tlsfPoolBytes` 是 backing 的固定 1 MiB 预留量，`configuredBytes` 是本次交给 TLSF 的容量，`currentPoolBytes` / `peakPoolBytes` 是池内占用；这些数值不可重复相加。静态区总量和可靠栈高水位目前为 `null`，不会填零。
+- 每个 Worker 一个场景；固定池最大 1 MiB，事件最多 4096 条/次读取，活动观测每页 16 项并读取全部分页，块快照最多 1024 项。不静默丢失事件。
+- 断言失败优先于 `unsupported`，两者同时出现时仍返回失败及非零退出码。C ABI 对 start、stop、update 和批量执行中的分配失败统一返回 OOM。
 - 事件只保存 `uint32_t` 时间；超过一个完整 `uint32_t` 周期的单批轨迹不能还原所有高 32 位。性能批量应使用 Release 的无轨迹构建。
 - Memory-check 的红区/释放填充/TLSF 检查不等价于完整 ASan；锁回调配对不证明真实 RTOS 并发正确。
 - 所有内存、性能和体积数据只针对 WASM，不能标成实测 MCU SRAM、Flash 或速度。

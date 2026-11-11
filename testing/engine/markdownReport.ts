@@ -129,6 +129,7 @@ function assertionMessage(assertion: AssertionResult): string {
 function memoryRows(before?: MemoryStats, after?: MemoryStats): unknown[][] {
   const fields: Array<[string, keyof MemoryStats, string]> = [
     ['配置池容量', 'configuredBytes', 'B'],
+    ['Backing 固定预留量', 'physicalPoolBytes', 'B'],
     ['峰值请求字节', 'peakRequestedBytes', 'B'],
     ['峰值实际池占用', 'peakPoolBytes', 'B'],
     ['分配次数', 'allocationCount', ''],

@@ -11,6 +11,74 @@ async function scenario(path: string) {
 }
 
 describe('real component in WASM', () => {
+  it.each([0, 1] as const)('models the initial white RGB cache at active level %i', async (activeLevel) => {
+    const input = await scenario('../scenarios/regression/basic-gpio.json');
+    input.driver = 'rgb-gpio';
+    input.activeLevel = activeLevel;
+    input.operations = [{ op: 'start', type: 0 }, { op: 'update' }];
+    input.assertions = [{ type: 'reference' }];
+    const result = await runIsolated(input);
+    expect(result.status).toBe('pass');
+    expect(result.trace[2]!.state.requestedColor).toEqual([0, 0, 0, 0]);
+    expect([result.trace[2]!.state.pinR, result.trace[2]!.state.pinG, result.trace[2]!.state.pinB]).toEqual([activeLevel, activeLevel, activeLevel]);
+  });
+
+  it('reads all active patterns across multiple observation pages', async () => {
+    const input = await scenario('../scenarios/regression/basic-gpio.json');
+    input.patterns = Array.from({ length: 40 }, (_, type) => ({ type, steps: input.patterns[0]!.steps }));
+    input.operations = [...input.patterns.map(({ type }) => ({ op: 'start' as const, type })), { op: 'update' }];
+    input.budgets.maxOperations = input.operations.length;
+    input.memory.heapSize = 65536;
+    input.assertions = [{ type: 'reference' }];
+    const result = await runIsolated(input);
+    expect(result.status).toBe('pass');
+    const state = result.trace.at(-2)!.state;
+    expect(state.activeCount).toBe(40);
+    expect(state.active.map(({ type }) => type)).toEqual(input.patterns.map(({ type }) => type));
+    expect(state.active.every(({ firstStart }) => !firstStart)).toBe(true);
+  });
+
+  it('distinguishes configured capacity from the fixed backing reservation', async () => {
+    for (const heapSize of [32768, 65536]) {
+      const input = await scenario('../scenarios/regression/basic-gpio.json');
+      input.memory.heapSize = heapSize;
+      const result = await runIsolated(input);
+      expect(result.status).toBe('pass');
+      expect(result.metrics.afterDestroy).toMatchObject({ configuredBytes: heapSize, physicalPoolBytes: 1048576, currentPoolBytes: 0 });
+      expect(result.metrics.tlsfPoolBytes).toBe(1048576);
+    }
+  });
+
+  it('classifies allocation failure during start as OOM', async () => {
+    const input = await scenario('../scenarios/regression/basic-gpio.json');
+    input.memory.failAllocationAt = 5;
+    const result = await runIsolated(input);
+    expect(result).toMatchObject({ status: 'execution_error', reason: 'oom' });
+    expect(result.metrics.failureMemory).toMatchObject({ lastFailureIndex: 5, lastFailureOperation: 1, lastFailureOperationIndex: 0 });
+  });
+
+  it.each(['stop', 'update', 'batch'] as const)('classifies restoration allocation failure during %s as OOM', async (op) => {
+    const input = await scenario('../scenarios/regression/basic-gpio.json');
+    input.patterns = [
+      { type: 0, steps: [{ type: 'HOLD', state: 'OFF', durationMs: 10 }, { type: 'STOP', durationMs: 0 }] },
+      { type: 1, steps: [{ type: 'HOLD', state: 'ON', durationMs: 100 }, { type: 'LOOP', durationMs: 0 }] },
+    ];
+    input.operations = [{ op: 'start', type: 1 }, { op: 'start', type: 0 }, { op: 'update' }];
+    input.assertions = [];
+    const baseline = await runIsolated(input);
+    expect(baseline.status).toBe('pass');
+    const nextAllocation = baseline.metrics.beforeDestroy!.allocationCount + 1;
+    input.operations.push({ op: 'failAllocation', nth: nextAllocation });
+    if (op === 'stop') input.operations.push({ op, type: 0 });
+    else if (op === 'batch') input.operations.push({ op, count: 1, intervalMs: 10 });
+    else input.operations.push({ op: 'advance', ms: 10 }, { op });
+    input.budgets.maxOperations = input.operations.length;
+    const result = await runIsolated(input);
+    expect(result).toMatchObject({ status: 'execution_error', reason: 'oom' });
+    expect(result.metrics.failureMemory?.lastFailureIndex).toBe(nextAllocation);
+    expect(result.metrics.failureMemory?.lastFailureOperationIndex).toBe(input.operations.length - 1);
+  });
+
   it('runs the basic scenario and releases every allocation', async () => {
     const result = await runIsolated(await scenario('../scenarios/regression/basic-gpio.json'));
     expect(result.status).toBe('pass');

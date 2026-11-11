@@ -132,8 +132,8 @@ export class ScenarioSession {
     const failed = assertions.some((assertion) => assertion.status === 'fail');
     const unsupported = this.currentState.unsupportedMask !== 0
       || assertions.some((assertion) => assertion.status === 'unsupported');
-    const status = overflow ? 'fail' : unsupported ? 'unsupported' : failed ? 'fail' : 'pass';
-    const reason = overflow ? 'trace_overflow' : unsupported ? 'unsupported' : failed ? 'assertion' : undefined;
+    const status = overflow || failed ? 'fail' : unsupported ? 'unsupported' : 'pass';
+    const reason = overflow ? 'trace_overflow' : failed ? 'assertion' : unsupported ? 'unsupported' : undefined;
     const result: ScenarioResult = {
       protocolVersion: 1,
       id: this.scenario.id,

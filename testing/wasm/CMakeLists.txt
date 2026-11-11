@@ -60,6 +60,7 @@ set(LEDIP_EXPORTED_FUNCTIONS
     _ledip_event_count
     _ledip_clear_events
     _ledip_state_pointer
+    _ledip_active_page_pointer
     _ledip_memory_pointer
     _ledip_blocks_pointer
     _ledip_block_count

@@ -18,6 +18,15 @@ async function cli(args: string[], input?: string) {
 }
 
 describe('CLI protocol', () => {
+  it('returns failure even when an unused pattern has unsupported steps', async () => {
+    const { root } = await nodePackage();
+    const input = JSON.parse(await readFile(resolve(root, 'scenarios/regression/basic-gpio.json'), 'utf8'));
+    input.patterns.push({ type: 99, steps: [{ type: 'HSV', durationMs: 10 }, { type: 'STOP', durationMs: 0 }] });
+    input.assertions.push({ type: 'state', at: 0, field: 'pinR', equals: 999 });
+    const result = await cli(['run', '--scenario', '-'], JSON.stringify(input));
+    expect(result.code).toBe(1);
+    expect(JSON.parse(result.stdout)).toMatchObject({ status: 'fail', reason: 'assertion' });
+  });
   it('keeps JSON stdout clean and supports stdin', async () => {
     const { root } = await nodePackage();
     const input = await readFile(resolve(root, 'scenarios/regression/basic-gpio.json'), 'utf8');

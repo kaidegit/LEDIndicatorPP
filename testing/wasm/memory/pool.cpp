@@ -43,7 +43,7 @@ bool configure(uint32_t bytes) {
     return false;
   configured = bytes;
   stats.configured_bytes = bytes;
-  stats.physical_pool_bytes = bytes;
+  stats.physical_pool_bytes = sizeof(backing);
   stats.allocator_overhead_bytes =
       tlsf_size() + tlsf_pool_overhead() + EXCEPTION_RESERVE_BYTES;
   stats.tlsf_consistent = 1;

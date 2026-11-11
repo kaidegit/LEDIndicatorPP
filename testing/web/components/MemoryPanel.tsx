@@ -19,6 +19,7 @@ export function MemoryPanel({ trace, blocks }: { trace: TraceEntry[]; blocks: Me
       </svg>
       {latest && (
         <div className="metric-grid">
+          <span>Backing 预留 / TLSF 配置容量</span><strong>{latest.physicalPoolBytes} / {latest.configuredBytes} B</strong>
           <span>当前 / 峰值实际占用</span><strong>{latest.currentPoolBytes} / {latest.peakPoolBytes} B</strong>
           <span>当前 / 峰值请求</span><strong>{latest.currentRequestedBytes} / {latest.peakRequestedBytes} B</strong>
           <span>分配 / 释放 / 失败</span><strong>{latest.allocationCount} / {latest.freeCount} / {latest.failureCount}</strong>

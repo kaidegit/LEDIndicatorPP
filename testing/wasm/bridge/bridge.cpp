@@ -219,7 +219,7 @@ int result_code(int handle, Instance *&instance) {
   return instance ? 0 : 1;
 }
 
-void snapshot(Instance &instance) {
+void snapshot(Instance &instance, uint32_t active_offset = 0) {
   instance.state = {};
   instance.state.time = virtual_time;
   instance.state.selected_type = -1;
@@ -240,7 +240,10 @@ void snapshot(Instance &instance) {
   if (!active.empty())
     instance.state.selected_type = static_cast<int32_t>(active.front().type);
   uint32_t index = 0;
+  uint32_t skipped = 0;
   for (const auto &entry : active) {
+    if (skipped++ < active_offset)
+      continue;
     if (index >= MAX_ACTIVE)
       break;
     auto &target = instance.state.active[index++];
@@ -393,7 +396,11 @@ int ledip_start(int handle, int type) {
   Instance *instance;
   if (result_code(handle, instance) != 0 || !instance->indicator)
     return 1;
-  instance->indicator->start(static_cast<TestBlinkType>(type));
+  try {
+    instance->indicator->start(static_cast<TestBlinkType>(type));
+  } catch (const std::bad_alloc &) {
+    return 3;
+  }
   snapshot(*instance);
   return 0;
 }
@@ -402,7 +409,11 @@ int ledip_stop(int handle, int type) {
   Instance *instance;
   if (result_code(handle, instance) != 0 || !instance->indicator)
     return 1;
-  instance->indicator->stop(static_cast<TestBlinkType>(type));
+  try {
+    instance->indicator->stop(static_cast<TestBlinkType>(type));
+  } catch (const std::bad_alloc &) {
+    return 3;
+  }
   snapshot(*instance);
   return 0;
 }
@@ -419,7 +430,11 @@ int ledip_update(int handle) {
   if (result_code(handle, instance) != 0 || !instance->indicator)
     return 1;
   current_instance = instance;
-  instance->indicator->update();
+  try {
+    instance->indicator->update();
+  } catch (const std::bad_alloc &) {
+    return 3;
+  }
   snapshot(*instance);
   return 0;
 }
@@ -430,7 +445,11 @@ int ledip_run_batch(int handle, uint32_t count, uint32_t interval) {
     return 1;
   for (uint32_t index = 0; index < count; ++index) {
     virtual_time += interval;
-    instance->indicator->update();
+    try {
+      instance->indicator->update();
+    } catch (const std::bad_alloc &) {
+      return 3;
+    }
     if (instance->event_overflow)
       return 4;
   }
@@ -457,6 +476,12 @@ State *ledip_state_pointer(int handle) {
   if (instance)
     snapshot(*instance);
   return instance ? &instance->state : nullptr;
+}
+ActiveEntry *ledip_active_page_pointer(int handle, uint32_t offset) {
+  auto *instance = resolve(handle);
+  if (instance)
+    snapshot(*instance, offset);
+  return instance ? instance->state.active : nullptr;
 }
 LedipMemoryStats *ledip_memory_pointer(int handle) {
   if (handle == -1) {
