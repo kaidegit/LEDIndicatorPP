@@ -1,0 +1,81 @@
+name: Full Test
+
+# 对 src/ 的提交触发全量测试；testing/ 或本 workflow 变更时也触发以保证工具链自身有效
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'testing/**'
+      - '.github/workflows/full-test.yml'
+  workflow_dispatch:
+
+jobs:
+  ledip-tester:
+    name: ledip_tester full suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: testing/package-lock.json
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 5.0.2
+          actions-cache-folder: emsdk-cache
+
+      - name: Install dependencies
+        working-directory: testing
+        run: npm ci
+
+      - name: Build WASM (4 profiles) + CLI + Web
+        id: build
+        working-directory: testing
+        run: npm run build:all
+
+      - name: Run full suite (regression + boundary + memory + stress)
+        id: suite
+        if: steps.build.outcome == 'success'
+        working-directory: testing
+        run: node dist/cli/index.js suite --name all --format json > artifacts/suite.json
+
+      - name: Bench (release)
+        if: steps.suite.outcome == 'success' || steps.suite.outcome == 'failure'
+        working-directory: testing
+        run: node dist/cli/index.js bench --profile release --output artifacts/bench.json
+
+      - name: Size report (size profile)
+        if: steps.suite.outcome == 'success' || steps.suite.outcome == 'failure'
+        working-directory: testing
+        run: node dist/cli/index.js size --profile size --output artifacts/size.json
+
+      - name: Generate Markdown report
+        if: steps.suite.outcome == 'success' || steps.suite.outcome == 'failure'
+        working-directory: testing
+        run: |
+          inputs=(artifacts/suite.json)
+          [ -f artifacts/bench.json ] && inputs+=(artifacts/bench.json)
+          [ -f artifacts/size.json ] && inputs+=(artifacts/size.json)
+          node dist/cli/index.js report --input "${inputs[@]}" --output artifacts/ledip-report.md
+
+      - name: Publish report to job summary
+        if: steps.suite.outcome == 'success' || steps.suite.outcome == 'failure'
+        working-directory: testing
+        run: cat artifacts/ledip-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload artifacts
+        if: steps.suite.outcome == 'success' || steps.suite.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ledip-test-report
+          path: testing/artifacts/
+          if-no-files-found: error
