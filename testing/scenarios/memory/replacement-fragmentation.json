@@ -1,0 +1,19 @@
+{
+  "protocolVersion": 1,
+  "id": "replacement-fragmentation",
+  "driver": "recorder",
+  "memory": { "heapSize": 65536 },
+  "patterns": [],
+  "operations": [
+    { "op": "register", "type": 0, "steps": [{ "type": "HOLD", "state": "ON", "durationMs": 10 }, { "type": "STOP", "durationMs": 0 }] },
+    { "op": "register", "type": 1, "steps": [{ "type": "RGB", "color": [1, 2, 3], "durationMs": 10 }, { "type": "STOP", "durationMs": 0 }] },
+    { "op": "register", "type": 0, "steps": [{ "type": "HOLD", "state": "OFF", "durationMs": 20 }, { "type": "STOP", "durationMs": 0 }] },
+    { "op": "checkpoint", "name": "fragmented" },
+    { "op": "register", "type": 1, "steps": [{ "type": "CLEAR", "durationMs": 5 }, { "type": "STOP", "durationMs": 0 }] }
+  ],
+  "assertions": [
+    { "type": "memory", "phase": "afterDestroy", "field": "liveBlocks", "equals": 0 },
+    { "type": "memory", "phase": "afterDestroy", "field": "currentPoolBytes", "equals": 0 }
+  ],
+  "budgets": { "maxOperations": 5, "timeoutMs": 3000 }
+}

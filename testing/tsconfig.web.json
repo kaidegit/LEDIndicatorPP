@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "declaration": false,
+    "rootDir": ".",
+    "types": ["vite/client"]
+  },
+  "include": ["web/**/*.ts", "web/**/*.tsx", "engine/webWorker.ts"]
+}

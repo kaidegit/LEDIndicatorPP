@@ -1,0 +1,9 @@
+node_modules/
+.tools/
+dist/
+dist-web/
+wasm/build/
+wasm/.cmake/
+artifacts/
+web/public/wasm/
+*.log

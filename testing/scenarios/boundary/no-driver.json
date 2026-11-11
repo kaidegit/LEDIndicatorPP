@@ -1,0 +1,17 @@
+{
+  "protocolVersion": 1,
+  "id": "no-driver",
+  "driver": "none",
+  "memory": { "heapSize": 32768 },
+  "patterns": [{ "type": 0, "steps": [
+    { "type": "HOLD", "state": "ON", "durationMs": 10 },
+    { "type": "STOP", "durationMs": 0 }
+  ] }],
+  "operations": [{ "op": "start", "type": 0 }, { "op": "update" }],
+  "assertions": [
+    { "type": "state", "at": 0, "field": "pinR", "equals": -1 },
+    { "type": "memory", "phase": "afterDestroy", "field": "liveBlocks", "equals": 0 },
+    { "type": "reference" }
+  ],
+  "budgets": { "maxOperations": 2, "timeoutMs": 3000 }
+}

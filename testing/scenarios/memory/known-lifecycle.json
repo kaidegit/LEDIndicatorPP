@@ -1,0 +1,18 @@
+{
+  "protocolVersion": 1,
+  "id": "known-lifecycle",
+  "driver": "recorder",
+  "memory": { "heapSize": 16384 },
+  "patterns": [],
+  "operations": [{ "op": "checkpoint", "name": "idle" }],
+  "assertions": [
+    { "type": "memory", "phase": "beforeDestroy", "field": "allocationCount", "equals": 2 },
+    { "type": "memory", "phase": "beforeDestroy", "field": "liveBlocks", "equals": 2 },
+    { "type": "memory", "phase": "afterDestroy", "field": "allocationCount", "equals": 2 },
+    { "type": "memory", "phase": "afterDestroy", "field": "freeCount", "equals": 2 },
+    { "type": "memory", "phase": "afterDestroy", "field": "liveBlocks", "equals": 0 },
+    { "type": "memory", "phase": "afterDestroy", "field": "currentRequestedBytes", "equals": 0 },
+    { "type": "memory", "phase": "afterDestroy", "field": "currentPoolBytes", "equals": 0 }
+  ],
+  "budgets": { "maxOperations": 1, "timeoutMs": 3000 }
+}

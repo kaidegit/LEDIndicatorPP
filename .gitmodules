@@ -1,0 +1,6 @@
+[submodule "testing/third_party/magic_enum"]
+	path = testing/third_party/magic_enum
+	url = https://github.com/Neargye/magic_enum.git
+[submodule "testing/third_party/tlsf"]
+	path = testing/third_party/tlsf
+	url = https://github.com/mattconte/tlsf.git

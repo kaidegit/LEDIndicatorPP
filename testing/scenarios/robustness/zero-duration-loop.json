@@ -1,0 +1,11 @@
+{
+  "protocolVersion": 1,
+  "id": "zero-duration-loop-probe",
+  "driver": "recorder",
+  "robustness": true,
+  "memory": { "heapSize": 32768 },
+  "patterns": [{ "type": 0, "steps": [{ "type": "LOOP", "durationMs": 0 }] }],
+  "operations": [{ "op": "start", "type": 0 }, { "op": "update" }],
+  "assertions": [],
+  "budgets": { "maxOperations": 2, "timeoutMs": 200 }
+}

@@ -1,0 +1,13 @@
+{
+  "protocolVersion": 1,
+  "id": "unsupported-hsv",
+  "driver": "recorder",
+  "memory": { "heapSize": 32768 },
+  "patterns": [{ "type": 0, "steps": [
+    { "type": "HSV", "durationMs": 10 },
+    { "type": "STOP", "durationMs": 0 }
+  ] }],
+  "operations": [{ "op": "start", "type": 0 }, { "op": "update" }],
+  "assertions": [{ "type": "reference" }],
+  "budgets": { "maxOperations": 2, "timeoutMs": 3000 }
+}

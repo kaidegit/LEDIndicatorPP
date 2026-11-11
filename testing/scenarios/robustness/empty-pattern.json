@@ -1,0 +1,13 @@
+{
+  "protocolVersion": 1,
+  "id": "empty-pattern-probe",
+  "driver": "recorder",
+  "robustness": true,
+  "memory": { "heapSize": 32768 },
+  "patterns": [{ "type": 0, "steps": [] }],
+  "operations": [{ "op": "start", "type": 0 }, { "op": "update" }],
+  "assertions": [
+    { "type": "state", "at": 0, "field": "activeCount", "equals": 0 }
+  ],
+  "budgets": { "maxOperations": 2, "timeoutMs": 500 }
+}

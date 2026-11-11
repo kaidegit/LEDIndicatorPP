@@ -1,0 +1,41 @@
+{
+  "name": "ledip_tester",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic WASM tests for LEDIndicatorPP",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "npm@11.11.0",
+  "bin": {
+    "ledip_tester": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build:wasm": "node scripts/build-wasm.mjs",
+    "build:ts": "tsc -p tsconfig.json",
+    "build:web": "vite build",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.web.json",
+    "build": "npm run build:wasm && npm run typecheck && npm run build:ts && npm run build:web",
+    "build:all": "npm run build:wasm -- --profile all && npm run build",
+    "pretest": "npm run build:wasm && npm run build:ts",
+    "test": "vitest run",
+    "dev": "vite",
+    "cli": "node dist/cli/index.js"
+  },
+  "dependencies": {
+    "ajv": "8.17.1",
+    "commander": "14.0.2",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.1.1",
+    "typescript": "5.9.3",
+    "vite": "7.2.2",
+    "vitest": "3.2.4"
+  }
+}

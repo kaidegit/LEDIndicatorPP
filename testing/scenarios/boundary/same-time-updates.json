@@ -1,0 +1,24 @@
+{
+  "protocolVersion": 1,
+  "id": "same-time-updates",
+  "driver": "gpio",
+  "memory": { "heapSize": 32768 },
+  "patterns": [{ "type": 0, "steps": [
+    { "type": "HOLD", "state": "ON", "durationMs": 0 },
+    { "type": "HOLD", "state": "OFF", "durationMs": 10 },
+    { "type": "STOP", "durationMs": 0 }
+  ] }],
+  "operations": [
+    { "op": "start", "type": 0 },
+    { "op": "update" }, { "op": "update" }, { "op": "update" },
+    { "op": "advance", "ms": 9 }, { "op": "update" },
+    { "op": "advance", "ms": 1 }, { "op": "update" }
+  ],
+  "assertions": [
+    { "type": "state", "at": 0, "field": "pinR", "equals": 0 },
+    { "type": "state", "at": 9, "field": "activeCount", "equals": 1 },
+    { "type": "state", "at": 10, "field": "activeCount", "equals": 0 },
+    { "type": "reference" }
+  ],
+  "budgets": { "maxOperations": 8, "timeoutMs": 3000 }
+}

@@ -8,16 +8,20 @@
 #include "magic_enum.hpp"
 #include "log_wrapper.hpp"
 
+#if defined(LEDIP_EXTERNAL_TIME)
+uint32_t LEDIndicatorGetTime();
+static inline uint32_t GetTime() {
+    return LEDIndicatorGetTime();
+}
 // if RT-Thread
-#if defined(__RTTHREAD__)
+#elif defined(__RTTHREAD__)
 #include "rtthread.h"
 static inline uint32_t GetTime() {
     return rt_tick_get_millisecond();
 }
-#endif
 
 // if esp or freeRTOS(this need you to add a global macro)
-#if defined(ESP_PLATFORM) || defined(FREERTOS)
+#elif defined(ESP_PLATFORM) || defined(FREERTOS)
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -234,6 +238,12 @@ public:
             unlock(lock_user_data);
         }
     }
+
+#if defined(LEDIP_ENABLE_DEBUG_STATE)
+    const std::list<BlinkStatus> &debugActivePatterns() const {
+        return active_patterns;
+    }
+#endif
 
 private:
     void reexecuteFirstStep() {

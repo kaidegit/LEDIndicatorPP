@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ledip.local/scenario-v1.json",
+  "type": "object",
+  "required": ["protocolVersion", "id", "driver", "memory", "patterns", "operations", "assertions", "budgets"],
+  "additionalProperties": false,
+  "properties": {
+    "protocolVersion": { "const": 1 },
+    "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "driver": { "enum": ["recorder", "gpio", "rgb-gpio", "none"] },
+    "activeLevel": { "enum": [0, 1] },
+    "robustness": { "type": "boolean" },
+    "seed": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+    "memory": {
+      "type": "object",
+      "required": ["heapSize"],
+      "additionalProperties": false,
+      "properties": {
+        "heapSize": { "type": "integer", "minimum": 1024, "maximum": 1048576 },
+        "failAllocationAt": { "type": "integer", "minimum": 1 },
+        "eventCapacity": { "type": "integer", "minimum": 1, "maximum": 4096 }
+      }
+    },
+    "patterns": { "type": "array", "maxItems": 256, "items": { "$ref": "#/definitions/pattern" } },
+    "operations": { "type": "array", "maxItems": 100000, "items": { "$ref": "#/definitions/operation" } },
+    "assertions": { "type": "array", "maxItems": 1000, "items": { "$ref": "#/definitions/assertion" } },
+    "budgets": {
+      "type": "object",
+      "required": ["maxOperations", "timeoutMs"],
+      "additionalProperties": false,
+      "properties": {
+        "maxOperations": { "type": "integer", "minimum": 1, "maximum": 100000 },
+        "timeoutMs": { "type": "integer", "minimum": 10, "maximum": 300000 },
+        "maxEvents": { "type": "integer", "minimum": 1, "maximum": 1000000 }
+      }
+    }
+  },
+  "definitions": {
+    "step": {
+      "type": "object",
+      "required": ["type", "durationMs"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["HOLD", "BREATHE", "BRIGHTNESS", "RGB", "IRGB", "CLEAR", "HSV", "LOOP", "STOP"] },
+        "durationMs": { "type": "integer", "minimum": 0, "maximum": 16777215 },
+        "state": { "enum": ["NONE", "OFF", "ON", "BREATHING"] },
+        "brightness": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+        "color": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "integer", "minimum": 0, "maximum": 255 } },
+        "index": { "type": "integer", "minimum": 0, "maximum": 255 }
+      }
+    },
+    "pattern": {
+      "type": "object",
+      "required": ["type", "steps"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 },
+        "steps": { "type": "array", "maxItems": 4096, "items": { "$ref": "#/definitions/step" } }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "required": ["op"],
+      "additionalProperties": false,
+      "properties": {
+        "op": { "enum": ["register", "start", "stop", "advance", "update", "batch", "failAllocation", "checkpoint"] },
+        "type": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 },
+        "steps": { "type": "array", "maxItems": 4096, "items": { "$ref": "#/definitions/step" } },
+        "ms": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+        "count": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+        "intervalMs": { "type": "integer", "minimum": 0, "maximum": 16777215 },
+        "nth": { "type": ["integer", "null"], "minimum": 1 },
+        "name": { "type": "string", "maxLength": 128 }
+      },
+      "allOf": [
+        { "if": { "properties": { "op": { "const": "register" } } }, "then": { "required": ["type", "steps"] } },
+        { "if": { "properties": { "op": { "enum": ["start", "stop"] } } }, "then": { "required": ["type"] } },
+        { "if": { "properties": { "op": { "const": "advance" } } }, "then": { "required": ["ms"] } },
+        { "if": { "properties": { "op": { "const": "batch" } } }, "then": { "required": ["count", "intervalMs"] } },
+        { "if": { "properties": { "op": { "const": "failAllocation" } } }, "then": { "required": ["nth"] } },
+        { "if": { "properties": { "op": { "const": "checkpoint" } } }, "then": { "required": ["name"] } }
+      ]
+    },
+    "assertion": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["state", "event", "memory", "noOverflow", "reference"] },
+        "at": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "field": { "type": "string" },
+        "equals": {},
+        "operationIndex": { "type": "integer", "minimum": 0 },
+        "eventIndex": { "type": "integer", "minimum": 0 },
+        "kind": { "enum": ["state", "brightness", "color", "indexColor", "clear", "update", "pin"] },
+        "args": { "type": "array", "items": { "type": "number" } },
+        "phase": { "enum": ["beforeDestroy", "afterDestroy"] },
+        "atMost": { "type": "number" }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "state" } } }, "then": { "required": ["at", "field", "equals"] } },
+        { "if": { "properties": { "type": { "const": "event" } } }, "then": { "required": ["operationIndex", "eventIndex", "kind"] } },
+        { "if": { "properties": { "type": { "const": "memory" } } }, "then": { "required": ["phase", "field"], "anyOf": [{ "required": ["equals"] }, { "required": ["atMost"] }] } }
+      ]
+    }
+  }
+}

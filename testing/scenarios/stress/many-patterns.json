@@ -1,0 +1,18 @@
+{
+  "protocolVersion": 1,
+  "id": "many-patterns",
+  "driver": "gpio",
+  "memory": { "heapSize": 262144, "eventCapacity": 4096 },
+  "patterns": [],
+  "operations": [
+    { "op": "register", "type": 0, "steps": [{ "type": "HOLD", "state": "ON", "durationMs": 1 }, { "type": "HOLD", "state": "OFF", "durationMs": 1 }, { "type": "LOOP", "durationMs": 0 }] },
+    { "op": "start", "type": 0 },
+    { "op": "batch", "count": 1000, "intervalMs": 1 }
+  ],
+  "assertions": [
+    { "type": "state", "at": 1000, "field": "activeCount", "equals": 1 },
+    { "type": "memory", "phase": "afterDestroy", "field": "liveBlocks", "equals": 0 },
+    { "type": "noOverflow" }
+  ],
+  "budgets": { "maxOperations": 3, "timeoutMs": 10000, "maxEvents": 10000 }
+}

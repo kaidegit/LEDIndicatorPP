@@ -1,0 +1,27 @@
+{
+  "protocolVersion": 1,
+  "id": "background-stop",
+  "driver": "gpio",
+  "memory": { "heapSize": 32768 },
+  "patterns": [
+    { "type": 5, "steps": [
+      { "type": "HOLD", "state": "ON", "durationMs": 40 },
+      { "type": "STOP", "durationMs": 0 }
+    ] },
+    { "type": 0, "steps": [
+      { "type": "HOLD", "state": "OFF", "durationMs": 100 },
+      { "type": "STOP", "durationMs": 0 }
+    ] }
+  ],
+  "operations": [
+    { "op": "start", "type": 5 }, { "op": "update" },
+    { "op": "start", "type": 0 }, { "op": "update" },
+    { "op": "advance", "ms": 100 }, { "op": "update" }
+  ],
+  "assertions": [
+    { "type": "state", "at": 100, "field": "activeCount", "equals": 0 },
+    { "type": "state", "at": 100, "field": "pinR", "equals": 0 },
+    { "type": "reference" }
+  ],
+  "budgets": { "maxOperations": 6, "timeoutMs": 3000 }
+}

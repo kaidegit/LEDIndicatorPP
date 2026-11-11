@@ -1,0 +1,34 @@
+{
+  "protocolVersion": 1,
+  "id": "basic-gpio",
+  "driver": "gpio",
+  "activeLevel": 1,
+  "memory": { "heapSize": 32768 },
+  "patterns": [
+    {
+      "type": 0,
+      "steps": [
+        { "type": "HOLD", "state": "ON", "durationMs": 100 },
+        { "type": "HOLD", "state": "OFF", "durationMs": 100 },
+        { "type": "STOP", "durationMs": 0 }
+      ]
+    }
+  ],
+  "operations": [
+    { "op": "start", "type": 0 },
+    { "op": "update" },
+    { "op": "advance", "ms": 100 },
+    { "op": "update" },
+    { "op": "advance", "ms": 100 },
+    { "op": "update" }
+  ],
+  "assertions": [
+    { "type": "state", "at": 0, "field": "pinR", "equals": 1 },
+    { "type": "state", "at": 100, "field": "pinR", "equals": 0 },
+    { "type": "state", "at": 200, "field": "activeCount", "equals": 0 },
+    { "type": "memory", "phase": "afterDestroy", "field": "liveBlocks", "equals": 0 },
+    { "type": "noOverflow" },
+    { "type": "reference" }
+  ],
+  "budgets": { "maxOperations": 6, "timeoutMs": 3000 }
+}

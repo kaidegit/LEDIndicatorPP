@@ -1,0 +1,30 @@
+{
+  "protocolVersion": 1,
+  "id": "rgb-cache-pins",
+  "driver": "rgb-gpio",
+  "activeLevel": 1,
+  "memory": { "heapSize": 32768 },
+  "patterns": [{ "type": 0, "steps": [
+    { "type": "RGB", "color": [1, 0, 0], "durationMs": 100 },
+    { "type": "HOLD", "state": "ON", "durationMs": 100 },
+    { "type": "RGB", "color": [0, 1, 0], "durationMs": 100 },
+    { "type": "HOLD", "state": "ON", "durationMs": 100 },
+    { "type": "STOP", "durationMs": 0 }
+  ] }],
+  "operations": [
+    { "op": "start", "type": 0 }, { "op": "update" },
+    { "op": "advance", "ms": 100 }, { "op": "update" },
+    { "op": "advance", "ms": 100 }, { "op": "update" },
+    { "op": "advance", "ms": 100 }, { "op": "update" }
+  ],
+  "assertions": [
+    { "type": "state", "at": 0, "field": "pinR", "equals": -1 },
+    { "type": "state", "at": 100, "field": "pinR", "equals": 1 },
+    { "type": "state", "at": 200, "field": "requestedColor", "equals": [0, 1, 0, 0] },
+    { "type": "state", "at": 200, "field": "pinG", "equals": 0 },
+    { "type": "state", "at": 300, "field": "pinR", "equals": 0 },
+    { "type": "state", "at": 300, "field": "pinG", "equals": 1 },
+    { "type": "reference" }
+  ],
+  "budgets": { "maxOperations": 8, "timeoutMs": 3000 }
+}

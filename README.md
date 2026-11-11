@@ -7,6 +7,20 @@ LED指示器这是一个具有预设优先级，自动抢占功能的LED框架�
 * ESP-IDF: [kaidegit/LEDIndicatorPP_example_idf](https://github.com/kaidegit/LEDIndicatorPP_example_idf)
 * RT-Thread: [kaidegit/LEDIndicatorPP_example_rtt](https://github.com/kaidegit/LEDIndicatorPP_example_rtt)
 
+## WASM 测试工具
+
+`testing/` 提供独立的 `ledip_tester`：使用真实 C++ 组件与驱动，在 Node.js/Web Worker 中运行同一份 WASM，支持虚拟时间、优先级回归、TLSF 固定池、失败注入、随机缩减、性能和体积报告。
+
+```sh
+git submodule update --init --recursive
+cd testing
+npm ci
+npm run build:all
+npm run cli -- suite --name all --format text
+```
+
+详见 [testing/README.md](testing/README.md)。测试工具指标不是实测 MCU 资源或速度。
+
 ## 支持类型
 
 - [x] GPIO LED

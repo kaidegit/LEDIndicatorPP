@@ -1,0 +1,25 @@
+{
+  "protocolVersion": 1,
+  "id": "repeated-start",
+  "driver": "gpio",
+  "memory": { "heapSize": 32768 },
+  "patterns": [{ "type": 0, "steps": [
+    { "type": "HOLD", "state": "ON", "durationMs": 100 },
+    { "type": "HOLD", "state": "OFF", "durationMs": 100 },
+    { "type": "LOOP", "durationMs": 0 }
+  ] }],
+  "operations": [
+    { "op": "start", "type": 0 }, { "op": "update" },
+    { "op": "advance", "ms": 99 }, { "op": "update" },
+    { "op": "start", "type": 0 }, { "op": "update" },
+    { "op": "advance", "ms": 99 }, { "op": "update" },
+    { "op": "advance", "ms": 1 }, { "op": "update" }
+  ],
+  "assertions": [
+    { "type": "state", "at": 99, "field": "pinR", "equals": 1 },
+    { "type": "state", "at": 198, "field": "pinR", "equals": 1 },
+    { "type": "state", "at": 199, "field": "pinR", "equals": 0 },
+    { "type": "reference" }
+  ],
+  "budgets": { "maxOperations": 10, "timeoutMs": 3000 }
+}

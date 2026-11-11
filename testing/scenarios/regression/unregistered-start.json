@@ -1,0 +1,20 @@
+{
+  "protocolVersion": 1,
+  "id": "unregistered-start",
+  "driver": "gpio",
+  "memory": { "heapSize": 32768 },
+  "patterns": [],
+  "operations": [
+    { "op": "start", "type": 99 },
+    { "op": "update" },
+    { "op": "stop", "type": 99 },
+    { "op": "update" }
+  ],
+  "assertions": [
+    { "type": "state", "at": 0, "field": "activeCount", "equals": 0 },
+    { "type": "state", "at": 0, "field": "pinR", "equals": -1 },
+    { "type": "memory", "phase": "afterDestroy", "field": "liveBlocks", "equals": 0 },
+    { "type": "reference" }
+  ],
+  "budgets": { "maxOperations": 4, "timeoutMs": 3000 }
+}

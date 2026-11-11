@@ -1,0 +1,21 @@
+{
+  "protocolVersion": 1,
+  "id": "short-active-replacement-probe",
+  "driver": "recorder",
+  "robustness": true,
+  "memory": { "heapSize": 32768 },
+  "patterns": [{ "type": 0, "steps": [
+    { "type": "HOLD", "state": "ON", "durationMs": 10 },
+    { "type": "HOLD", "state": "OFF", "durationMs": 10 },
+    { "type": "HOLD", "state": "ON", "durationMs": 10 },
+    { "type": "LOOP", "durationMs": 0 }
+  ] }],
+  "operations": [
+    { "op": "start", "type": 0 }, { "op": "update" },
+    { "op": "advance", "ms": 20 }, { "op": "update" },
+    { "op": "register", "type": 0, "steps": [{ "type": "STOP", "durationMs": 0 }] },
+    { "op": "update" }
+  ],
+  "assertions": [],
+  "budgets": { "maxOperations": 6, "timeoutMs": 500 }
+}

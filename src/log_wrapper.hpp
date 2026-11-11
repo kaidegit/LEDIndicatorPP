@@ -44,6 +44,13 @@
 #define log_w(format, ...) ulog_w(LED_LOG_TAG, format, ##__VA_ARGS__)
 #define log_e(format, ...) ulog_e(LED_LOG_TAG, format, ##__VA_ARGS__)
 #define log_hex(width, buf, size) ulog_hex(LED_LOG_TAG, buf, size)
+#elif defined(LEDIP_NO_LOG)
+#define log_v(format, ...) ((void)0)
+#define log_d(format, ...) ((void)0)
+#define log_i(format, ...) ((void)0)
+#define log_w(format, ...) ((void)0)
+#define log_e(format, ...) ((void)0)
+#define log_hex(width, buf, size) ((void)0)
 #else
 #include "stdio.h"
 #ifdef USE_LOG_COLOR

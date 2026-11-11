@@ -1,0 +1,22 @@
+{
+  "protocolVersion": 1,
+  "id": "uint32-wrap",
+  "driver": "gpio",
+  "memory": { "heapSize": 32768 },
+  "patterns": [{ "type": 0, "steps": [
+    { "type": "HOLD", "state": "ON", "durationMs": 100 },
+    { "type": "HOLD", "state": "OFF", "durationMs": 100 },
+    { "type": "STOP", "durationMs": 0 }
+  ] }],
+  "operations": [
+    { "op": "advance", "ms": 4294967200 },
+    { "op": "start", "type": 0 }, { "op": "update" },
+    { "op": "advance", "ms": 100 }, { "op": "update" }
+  ],
+  "assertions": [
+    { "type": "state", "at": 4294967300, "field": "pinR", "equals": 0 },
+    { "type": "state", "at": 4294967300, "field": "time", "equals": 4294967300 },
+    { "type": "reference" }
+  ],
+  "budgets": { "maxOperations": 5, "timeoutMs": 3000 }
+}

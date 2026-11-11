@@ -1,0 +1,29 @@
+{
+  "protocolVersion": 1,
+  "id": "recorder-interfaces",
+  "driver": "recorder",
+  "memory": { "heapSize": 32768 },
+  "patterns": [{ "type": 0, "steps": [
+    { "type": "RGB", "color": [12, 34, 56], "durationMs": 10 },
+    { "type": "BRIGHTNESS", "brightness": 75, "durationMs": 10 },
+    { "type": "IRGB", "index": 2, "color": [1, 2, 3], "durationMs": 10 },
+    { "type": "CLEAR", "durationMs": 10 },
+    { "type": "STOP", "durationMs": 0 }
+  ] }],
+  "operations": [
+    { "op": "start", "type": 0 }, { "op": "update" },
+    { "op": "advance", "ms": 10 }, { "op": "update" },
+    { "op": "advance", "ms": 10 }, { "op": "update" },
+    { "op": "advance", "ms": 10 }, { "op": "update" },
+    { "op": "advance", "ms": 10 }, { "op": "update" }
+  ],
+  "assertions": [
+    { "type": "state", "at": 0, "field": "requestedColor", "equals": [12, 34, 56, 0] },
+    { "type": "state", "at": 10, "field": "brightness", "equals": 75 },
+    { "type": "state", "at": 20, "field": "requestedColor", "equals": [1, 2, 3, 2] },
+    { "type": "state", "at": 40, "field": "activeCount", "equals": 0 },
+    { "type": "memory", "phase": "afterDestroy", "field": "liveBlocks", "equals": 0 },
+    { "type": "reference" }
+  ],
+  "budgets": { "maxOperations": 10, "timeoutMs": 3000 }
+}
