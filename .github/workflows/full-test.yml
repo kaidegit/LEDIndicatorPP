@@ -46,7 +46,9 @@ jobs:
         id: suite
         if: steps.build.outcome == 'success'
         working-directory: testing
-        run: node dist/cli/index.js suite --name all --format json > artifacts/suite.json
+        run: |
+          mkdir -p artifacts
+          node dist/cli/index.js suite --name all --format json > artifacts/suite.json
 
       - name: Bench (release)
         if: steps.suite.outcome == 'success' || steps.suite.outcome == 'failure'
